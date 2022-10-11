@@ -12,19 +12,17 @@ from sklearn.model_selection import train_test_split
 from nltk.sentiment import SentimentAnalyzer
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import (
-    ConfusionMatrixDisplay,
     classification_report,
     confusion_matrix,
 )
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 import numpy as np
 
 df = pd.read_csv(
-    "../Downloads/FinancialPhraseBank-v1.0/Sentences_AllAgree.txt",
+    "../Documents/AI Guild/Advanced Python",
     sep="\@",
     engine="python",
     encoding="iso-8859-1",
