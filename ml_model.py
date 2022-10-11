@@ -22,7 +22,7 @@ import pandas as pd
 import numpy as np
 
 df = pd.read_csv(
-    "../Documents/AI Guild/Advanced Python",
+    "../Documents/AI Guild/Advanced Python/Sentences_AllAgree.txt",
     sep="\@",
     engine="python",
     encoding="iso-8859-1",
