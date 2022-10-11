@@ -21,45 +21,13 @@ from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv(
-    "../Documents/AI Guild/Advanced Python/Sentences_AllAgree.txt",
-    sep="\@",
-    engine="python",
-    encoding="iso-8859-1",
-    header=None,
-)
 
-df.columns = ["sentence", "sentiment"]
-df[df.duplicated(keep=False)]
-df.drop_duplicates(inplace=True)
-df.to_csv("Sentences_AllAgree_Cleaned.csv", sep="@")
-sentences = df["sentence"]
-
-# Instantiate the sentiment intensity analyzer
-vader = SentimentIntensityAnalyzer()
-
-# Iterate through the headlines and get the polarity scores using vader
-scores = sentences.apply(vader.polarity_scores).tolist()
-
-# Convert the 'scores' list of dicts into a DataFrame
-scores_df = pd.DataFrame(scores)
-
-columns = ["compound"]
-
-X = scores_df.drop(columns, axis=1)
-
-df_cleaned = pd.read_csv(
-    "../Downloads/Sentences_AllAgree_Cleaned.csv",
-    sep="\@",
-    engine="python",
-    encoding="iso-8859-1",
-)
-
-y = df_cleaned["sentiment"]
+data = pd.read_csv("./data_ex.csv")
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+        data[["gender"]],
+        data["Retention"],
+    )
 
 
 # Naive Bayes
