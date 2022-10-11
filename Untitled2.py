@@ -15,9 +15,7 @@ def get_chunk_size():
 
 
 def load_data(n_chunks):
-    
     df = None
-
     for chunk in range(n_chunks):
         url = "http://127.0.0.1:8000/chunk/" + str(chunk)
         response = requests.get(url)
@@ -30,6 +28,7 @@ def load_data(n_chunks):
 
     return df
 
+
 def clean_data(df):
     df = df.dropna()
 
@@ -37,15 +36,14 @@ def clean_data(df):
 
 
 def run_model(df):
-
     X_train, X_test, y_train, y_test = train_test_split(
         df[["gender"]],
         df["Retention"],
     )
-
     rf = RandomForestClassifier(min_samples_leaf=50)
     rf.fit(X_train, y_train)
     predictions = rf.predict(X_test)
+
     return rf, predictions
 
 
