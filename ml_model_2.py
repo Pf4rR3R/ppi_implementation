@@ -2,54 +2,67 @@
 # coding: utf-8
 
 import pandas as pd
-import numpy as np
 import requests
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-)
-def get_chunk_size():
-    url = "http://127.0.0.1:8000/n_chunks"
-    response = requests.get(url)
+import pickle
 
-    return response.json()['chunks']
 
-def load_data(n_chunks):
-    df = None
-    for chunk in range(n_chunks):
-        url = "http://127.0.0.1:8000/chunk/" + str(chunk)
-        response = requests.get(url)
-        text = response.text
-        cleaned_text = text[1:-1].replace("\\", "")
-        if df is not None:
-            df = pd.concat([df, pd.read_json(cleaned_text)])
+def get_chunk_indices():
+    url = "http://localhost:8000/chunk_indices"
+    chunk_list = requests.get(url).json()
+    print(chunk_list)
+
+    return chunk_list
+
+
+def load_and_sort_data():
+    """
+    Lädt und sortiert chunks in train und test data basierend auf dem Chunk-Index
+    """
+
+    mega_train = None
+    mega_test = None
+    for i in get_chunk_indices():
+        # adds every chunk with an even number to test data and every chunk with an uneven number to train data
+        if int(i) % 2 == 0:
+            url_chunk = "http://localhost:8000/chunk/" + str(i)
+            response = requests.get(url_chunk)
+            text = response.text
+            # the json file comes with an extra pair of "" that needs to be replaced in order to read the chunk content
+            cleaned_text = text[1:-1].replace("\\", "")
+            mega_test = pd.concat([mega_test, pd.read_json(cleaned_text)])
+
         else:
-            df = pd.read_json(cleaned_text)
+            cleaned_text = clean_chunk(cleaned_text, i)
+            mega_train = pd.concat([mega_train, pd.read_json(cleaned_text)])
 
-    return df
+    return mega_train, mega_test
 
-def clean_data(df):
-    df = df.dropna()
 
-    return df
+def clean_chunk(cleaned_text, i):
+    url = "http://localhost:8000/chunk/" + str(i)
+    response_uneven = requests.get(url)
+    text_uneven = response_uneven.text
+    # the json file comes with an extra pair of "" that needs to be replaced in order to read the chunk content
+    cleaned_text = text_uneven[1:-1].replace("\\", "")
+    return cleaned_text
 
-def run_model(df):
-    X_train, X_test, y_train, y_test = train_test_split(
-    data[["gender"]], data["Retention"],
-    )
-    # Randomforest
+
+def train_model(mega_train, mega_test):
+    """trains the model and stores the trained model in a pickle file"""
+    x_train, y_train, x_test, y_test = [
+        mega_train[["Age_client"]],
+        mega_train["NClaims1"],
+        mega_test[["Age_client"]],
+        mega_test["NClaims1"],
+    ]
     clf = RandomForestClassifier(max_depth=2, random_state=0)
-    predictions = clf.fit(X_train,y_train).predict(X_test)
-
-    print("random forest classification report:")
-    print(classification_report(y_test, y_pred))
-    return clf, predictions
+    model = clf.fit(x_train, y_train)
+    pickle.dump(model, open("model.pkl", "wb"))
+    return model
 
 
 if __name__ == "__main__":
-    n_chunks = get_chunk_size()
-    df = load_data(n_chunks)
-    df = clean_data(df)
-    model, predictions = run_model(df)
+    chunk_list = get_chunk_indices()
+    mega_train, mega_test = load_and_sort_data()
+    model = train_model(mega_train, mega_test)
