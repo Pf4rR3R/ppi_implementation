@@ -10,43 +10,46 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
+def get_chunk_size():
+    url = "http://127.0.0.1:8000/n_chunks"
+    response = requests.get(url)
 
-url = "http://localhost:8000/n_chunks"
-response = requests.get(url)
-response.json()["chunks"]
+    return response.json()['chunks']
 
-url = "http://localhost:8000/chunk/1"
-response1 = requests.get(url)
-json_text1 = response1.text
+def load_data(n_chunks):
+    df = None
+    for chunk in range(n_chunks):
+        url = "http://127.0.0.1:8000/chunk/" + str(chunk)
+        response = requests.get(url)
+        text = response.text
+        cleaned_text = text[1:-1].replace("\\", "")
+        if df is not None:
+            df = pd.concat([df, pd.read_json(cleaned_text)])
+        else:
+            df = pd.read_json(cleaned_text)
 
-short1 = json_text1[1:-1]
-short1 = short1.replace("\\", "")
+    return df
 
-url = "http://localhost:8000/chunk/2"
-response2 = requests.get(url)
-json_text2 = response2.text
+def clean_data(df):
+    df = df.dropna()
 
-short2 = json_text2[1:-1]
-short2 = short2.replace("\\", "")
+    return df
 
-
-df1 = pd.read_json(short1, orient="records")
-df2 = pd.read_json(short2, orient="records")
-
-data = pd.concat([df1, df2]).dropna()
-
-X_train, X_test, y_train, y_test = train_test_split(
+def run_model(df):
+    X_train, X_test, y_train, y_test = train_test_split(
     data[["gender"]], data["Retention"],
-)
+    )
+    # Randomforest
+    clf = RandomForestClassifier(max_depth=2, random_state=0)
+    predictions = clf.fit(X_train,y_train).predict(X_test)
 
-# Randomforest
-clf = RandomForestClassifier(max_depth=2, random_state=0)
-y_pred = clf.fit(X_train, y_train).predict(X_test)
+    print("random forest classification report:")
+    print(classification_report(y_test, y_pred))
+    return clf, predictions
 
-cm = confusion_matrix(y_test, y_pred)
-# sns.heatmap(cm, square=True, annot=True, fmt='d', cmap="Blues")
-# plt.xlabel('predicted label')
-# plt.ylabel('actual label');
 
-print("random forest classification report:")
-print(classification_report(y_test, y_pred))
+if __name__ == "__main__":
+    n_chunks = get_chunk_size()
+    df = load_data(n_chunks)
+    df = clean_data(df)
+    model, predictions = run_model(df)
