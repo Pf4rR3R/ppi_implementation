@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 
 def get_number_of_chunks():
@@ -58,6 +59,12 @@ def create_model(X_train, y_train):
     
     return rf
 
+def evaluate_model(model, X_test, y_test):
+    predictions = model.predict(X_test)
+    accuracy = accuracy_score(predictions, y_test)
+
+    return accuracy
+
 
 if __name__ == "__main__":
     n_chunks = get_number_of_chunks()
@@ -68,3 +75,4 @@ if __name__ == "__main__":
         all_chunks_data.append(processed_chunk_data)
     X_train, X_test, y_train, y_test = join_chunk_data(all_chunks_data)
     model = create_model(X_train, y_train)
+    accuracy = evaluate_model(model, X_test, y_test)
