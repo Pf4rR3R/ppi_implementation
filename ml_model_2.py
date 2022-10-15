@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 from sklearn.ensemble import RandomForestClassifier
 import pickle
+import mlflow
 
 
 def get_chunk_indices():
@@ -47,19 +48,26 @@ def clean_chunk(cleaned_text, i):
     cleaned_text = text_uneven[1:-1].replace("\\", "")
     return cleaned_text
 
-
 def train_model(mega_train, mega_test):
     """trains the model and stores the trained model in a pickle file"""
-    x_train, y_train, x_test, y_test = [
-        mega_train[["Age_client"]],
-        mega_train["NClaims1"],
-        mega_test[["Age_client"]],
-        mega_test["NClaims1"],
-    ]
-    clf = RandomForestClassifier(max_depth=2, random_state=0)
-    model = clf.fit(x_train, y_train)
-    pickle.dump(model, open("model.pkl", "wb"))
-    return model
+    with mlflow.start_run():
+        x_train, y_train, x_test, y_test = [
+            mega_train[["Age_client"]],
+            mega_train["NClaims1"],
+            mega_test[["Age_client"]],
+            mega_test["NClaims1"],
+        ]
+        clf = RandomForestClassifier(max_depth=2, random_state=42)
+        mlflow.log_param("max_depth", 2)
+        mlflow.log_param("random_state", 42)
+        model = clf.fit(x_train, y_train)
+
+        acc = model.score(x_train,y_train)
+        mlflow.log_metric("train_acc",acc)
+
+        mlflow.sklearn.log_model(model,"model")
+        #pickle.dump(model, open("model.pkl", "wb"))
+        #return model --> maybe two functions (return 2dict (model, param)
 
 
 if __name__ == "__main__":
